@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Handleiding — iTeachers Code</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="css/app.css">
+<style>
+  body { font-family: Sora, "Segoe UI", system-ui, sans-serif; padding: 24px 16px 48px; }
+  .doc { max-width: 820px; margin: 0 auto; background: var(--pn); border: 1px solid var(--ln); border-radius: 16px; padding: 28px 32px; box-shadow: var(--shadow); }
+  .doc h1 { margin: 0 0 6px; font-size: 28px; letter-spacing: -.02em; }
+  .doc h2 { margin: 28px 0 8px; font-size: 18px; border-top: 1px solid var(--ln); padding-top: 18px; }
+  .doc h2:first-of-type { border-top: 0; padding-top: 0; }
+  .doc p, .doc li { color: var(--ink); line-height: 1.55; }
+  .doc .lead { color: var(--mut); font-size: 15px; }
+  table.les { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0; }
+  table.les th, table.les td { border: 1px solid var(--ln); padding: 8px 10px; text-align: left; vertical-align: top; }
+  table.les th { background: var(--bg); }
+  .topbar { max-width: 820px; margin: 0 auto 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+  @media print {
+    body { background: #fff; padding: 0; }
+    .topbar, header { display: none !important; }
+    .doc { box-shadow: none; border: 0; padding: 0; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><span class="lgi"></span><span><b>iTeachers</b> Code<small>Docentenhandleiding</small></span></div>
+</header>
+<div class="topbar">
+  <a class="btn go" href="index.html">Terug naar het spel</a>
+  <button type="button" class="btn" onclick="window.print()">Print / PDF</button>
+</div>
+<article class="doc" id="doc">
+  <p class="tag mono">// handleiding</p>
+  <h1>iTeachers Code — Meridiaan 2075</h1>
+  <p class="lead">Educatief programmeerspel voor groep 7–8 en de onderbouw van het voortgezet onderwijs. Drie niveaus (Visueel, Blokken, Code) op dezelfde puzzels.</p>
+  <div id="body">Laden…</div>
+</article>
+<script src="js/engine.js"></script>
+<script src="js/extra-levels.js"></script>
+<script src="js/catalog.js"></script>
+<script>
+(function () {
+  const C = window.ITCCatalog;
+  const worlds = C.WORLDS.map(w =>
+    "<tr><td>" + w.n + "</td><td>" + w.k + "</td><td>" + w.levels.length + "</td><td>" + (w.kerndoelen || "") + "</td><td>" + (w.les || "") + "</td></tr>"
+  ).join("");
+  const lessons = (C.LESKAART || []).map(r =>
+    "<tr><td>" + r.les + "</td><td>" + r.wereld + "</td><td>" + r.focus + "</td><td>" + r.doel + "</td><td>" + r.duur + "</td></tr>"
+  ).join("");
+  const guide = (C.GUIDE || []).map(g => "<h2>" + g.h + "</h2><p>" + g.p + "</p>").join("");
+  document.getElementById("body").innerHTML =
+    "<h2>Werelden</h2>" +
+    "<table class=\"les\"><thead><tr><th>Wereld</th><th>Niveau</th><th>Opdrachten</th><th>Kerndoelen</th><th>Lesadvies</th></tr></thead><tbody>" + worlds + "</tbody></table>" +
+    "<h2>Leskaart (suggestie)</h2>" +
+    "<table class=\"les\"><thead><tr><th>Les</th><th>Wereld</th><th>Focus</th><th>Doel</th><th>Duur</th></tr></thead><tbody>" + lessons + "</tbody></table>" +
+    guide +
+    "<h2>In de klas</h2>" +
+    "<ul>" +
+    "<li>Laat leerlingen hardop zeggen wat Nova doet vóór ze op Start drukken.</li>" +
+    "<li>Gebruik Tip één voor één — niet alle drie tegelijk.</li>" +
+    "<li>Stap en Pauze helpen bij het debuggen van een botsing.</li>" +
+    "<li>Docent-modus: ontgrendel alles, toon leerdoelen, laad voorbeeldoplossing. Zet uit vóór zelfstandig werk.</li>" +
+    "<li>Export CSV: knop op het startscherm, voor een snelle voortgangscheck.</li>" +
+    "</ul>" +
+    "<h2>Techniek</h2>" +
+    "<p>Voortgang staat in de browser (localStorage). Wisselen van computer of privénavigatie wist die voortgang. Geen account nodig.</p>" +
+    "<p>Open het spel via <code>index.html</code> op je schoolserver of lokaal met XAMPP.</p>";
+})();
+</script>
+</body>
+</html>
