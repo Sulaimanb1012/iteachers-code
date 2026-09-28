@@ -14,7 +14,8 @@
 
 let mode = 1, lang = "js", teach = false, menu = false, cat = "move";
   let wi = 0, lv = 0, active = -1, sel = "", timer = null, drag = null, skipClick = false, view = null, runToken = 0;
-  let prog = {}, done = {}, seen = [], hintsUsed = {}, play = null, paused = false;
+  let prog = {}, done = {}, seen = [], hintsUsed = {}, play = null, paused = false, tourSeen = false, tourStep = 0;
+  let tourPlaying = false, tourMuted = false, tourToken = 0;
 
   const $ = id => document.getElementById(id);
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -50,7 +51,7 @@ let mode = 1, lang = "js", teach = false, menu = false, cat = "move";
         programs[id] = {};
         Object.keys(prog[id]).forEach(k => { programs[id][k] = E.strip(prog[id][k]); });
       });
-      localStorage.setItem(SAVE, JSON.stringify({ mode, lang, done, seen, programs, hintsUsed }));
+      localStorage.setItem(SAVE, JSON.stringify({ mode, lang, done, seen, programs, hintsUsed, tourSeen }));
     } catch (e) { /* volle of geblokkeerde opslag: de sessie werkt wel */ }
   }
   function heal(nodes) {
@@ -69,12 +70,13 @@ let mode = 1, lang = "js", teach = false, menu = false, cat = "move";
       done = s.done || {};
       seen = s.seen || [];
       hintsUsed = s.hintsUsed || {};
+      tourSeen = !!s.tourSeen;
       prog = {};
       Object.keys(s.programs || {}).forEach(id => {
         prog[id] = {};
         Object.keys(s.programs[id]).forEach(k => { prog[id][k] = heal(s.programs[id][k]); });
       });
-    } catch (e) { prog = {}; done = {}; seen = []; hintsUsed = {}; }
+    } catch (e) { prog = {}; done = {}; seen = []; hintsUsed = {}; tourSeen = false; }
   }
 
   function stamp(nodes) {
@@ -747,6 +749,153 @@ let mode = 1, lang = "js", teach = false, menu = false, cat = "move";
     modal('<div class="guide"><h3>Handleiding</h3>' + GUIDE.map(g => "<h3>" + g.h + "</h3><p>" + g.p + "</p>").join("") + lessons + '<p><a href="handleiding.html">Uitgebreide handleiding openen</a></p></div>', [["Sluiten", "go"]]);
   }
 
+  const NOVA_MINI = '<div class="tour-nova" aria-hidden="true"><svg viewBox="0 0 200 150"><defs><radialGradient id="tng" cx=".4" cy=".3"><stop offset="0" stop-color="#f0f9ff"/><stop offset="1" stop-color="#94a3b8"/></radialGradient><radialGradient id="tgl"><stop offset="0" stop-color="#2dd4bf" stop-opacity=".5"/><stop offset="1" stop-color="#2dd4bf" stop-opacity="0"/></radialGradient></defs><ellipse cx="100" cy="138" rx="48" ry="7" fill="#0003"/><g class="float"><circle cx="100" cy="82" r="62" fill="url(#tgl)"/><path d="M52 62L70 76M148 62L130 76" stroke="#64748b" stroke-width="5"/><ellipse class="rot2" cx="46" cy="56" rx="32" ry="5" fill="#38bdf8" opacity=".7"/><ellipse class="rot2" cx="154" cy="56" rx="32" ry="5" fill="#38bdf8" opacity=".7"/><rect x="56" y="62" width="88" height="62" rx="30" fill="url(#tng)"/><rect x="66" y="74" width="68" height="34" rx="17" fill="#0b1220"/><circle class="eyes" cx="86" cy="91" r="7" fill="#2dd4bf"/><circle class="eyes" cx="114" cy="91" r="7" fill="#2dd4bf"/><path d="M100 62V48" stroke="#64748b" stroke-width="4"/><circle cx="100" cy="46" r="5" fill="#f59e0b"/></g></svg></div>';
+
+  /* Korte zinnen die Nova hardop zegt — filmpje, weinig lezen. */
+  const TOUR = [
+    {
+      t: "Hoi, ik ben Nova!",
+      say: "Hoi! Ik ben Nova. Een bezorgdrone in de zwevende stad Meridiaan, in het jaar twee-duizend-vijfenzeventig. Jij programmeert mijn route.",
+      art: "hello",
+      chips: [["teal", "Nova"], ["", "2075"], ["amber", "Jij stuurt"]]
+    },
+    {
+      t: "Zo speel je",
+      say: "Links is het speelveld. Rechts bouw je een programma. Tik op Start, dan vlieg ik jouw stappen. Botst iets? Dan zeg ik wat er misging.",
+      art: "play",
+      chips: [["", "Speelveld"], ["teal", "Start"], ["amber", "Programma"]]
+    },
+    {
+      t: "Drie manieren",
+      say: "Er zijn drie niveaus. Visueel: tik iconen. Blokken: sleep blokken. Code: typ JavaScript of Python. Je mag altijd wisselen.",
+      art: "modes",
+      chips: [["teal", "Visueel"], ["", "Blokken"], ["amber", "Code"]]
+    },
+    {
+      t: "Bolletjes & werelden",
+      say: "Bovenaan zie je bolletjes: dat zijn de opdrachten. Maak er één af, dan gaat de volgende open. Begin bij de wereld Skyline Meridiaan.",
+      art: "dots",
+      chips: [["", "Bolletjes"], ["teal", "Skyline"], ["amber", "Volgende"]]
+    },
+    {
+      t: "Hulp & sterren",
+      say: "Vast? Tik op Tip. Of gebruik Stap, om één beweging te zien. Als je wint, krijg je sterren. Drie sterren is top. Eén ster is ook goed!",
+      art: "help",
+      chips: [["amber", "Tip"], ["", "Stap"], ["teal", "Sterren"]]
+    },
+    {
+      t: "Aan de slag!",
+      say: "Klaar? Kies Skyline Meridiaan en druk op Speel. Volg het oranje doel. Proberen mag. Fouten maken mag. Laten we gaan!",
+      art: "go",
+      chips: [["teal", "Speel"], ["", "Doel"], ["amber", "Proberen"]]
+    }
+  ];
+
+  function stopSpeech() {
+    try { window.speechSynthesis && speechSynthesis.cancel(); } catch (e) { /* ignore */ }
+  }
+  function pickVoice() {
+    if (!window.speechSynthesis) return null;
+    const voices = speechSynthesis.getVoices() || [];
+    return voices.find(v => /nl(-|_)?(NL|BE)/i.test(v.lang))
+      || voices.find(v => /^nl/i.test(v.lang))
+      || voices.find(v => /dutch|nederlands/i.test(v.name))
+      || null;
+  }
+  function speak(text, token, onEnd) {
+    stopSpeech();
+    if (tourMuted || !window.speechSynthesis) {
+      setTimeout(() => { if (token === tourToken && onEnd) onEnd(); }, Math.min(4200, 900 + text.length * 45));
+      return;
+    }
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "nl-NL";
+    u.rate = 1.02;
+    u.pitch = 1.08;
+    const voice = pickVoice();
+    if (voice) u.voice = voice;
+    u.onend = () => { if (token === tourToken && onEnd) onEnd(); };
+    u.onerror = () => { if (token === tourToken && onEnd) onEnd(); };
+    speechSynthesis.speak(u);
+  }
+  function tourArt(kind) {
+    const map = {
+      hello: '<div class="film-stage s-hello"><span class="film-badge">Meridiaan 2075</span></div>',
+      play: '<div class="film-stage s-play"><div class="film-board"><i></i><i class="on"></i><i></i><i></i><b></b></div><span class="film-badge">Start → vliegen</span></div>',
+      modes: '<div class="film-stage s-modes"><span>Visueel</span><span>Blokken</span><span>Code</span></div>',
+      dots: '<div class="film-stage s-dots"><i class="on">1</i><i>2</i><i>3</i><i>4</i><span class="film-badge">Opdrachten</span></div>',
+      help: '<div class="film-stage s-help"><span class="star">★★★</span><span class="film-badge">Tips & sterren</span></div>',
+      go: '<div class="film-stage s-go"><span class="film-cta">Speel</span><span class="film-badge">Skyline Meridiaan</span></div>'
+    };
+    return map[kind] || "";
+  }
+  function showTourGate() {
+    stopSpeech();
+    tourPlaying = false;
+    $("mc").className = "mc tour-mc film-mc";
+    $("mc").innerHTML = '<div class="film-gate">' + NOVA_MINI + '<h3>Nova’s filmpje</h3><p>Kort. Met geluid. Bijna geen tekst.</p><button type="button" class="btn go film-play" id="filmstart">▶ Afspelen</button><button type="button" class="btn" id="filmskip">Overslaan</button><p class="film-note">Zet je geluid aan. Werkt het best in Chrome of Edge.</p></div>';
+    $("md").classList.add("show");
+    $("filmstart").onclick = () => { tourPlaying = true; showTour(0, true); };
+    $("filmskip").onclick = () => finishTour(false);
+  }
+  function showTour(step, auto) {
+    tourStep = Math.max(0, Math.min(step, TOUR.length - 1));
+    const token = ++tourToken;
+    const s = TOUR[tourStep];
+    const chips = (s.chips || []).map(c => {
+      const label = c[1];
+      const mark = label.indexOf("★") >= 0 ? "★" : label.replace(/[^0-9A-Za-z]/g, "").slice(0, 1) || "•";
+      return '<span class="tour-chip"><i class="' + (c[0] || "") + '">' + mark + "</i>" + esc(label) + "</span>";
+    }).join("");
+    const dots = TOUR.map((_, i) => "<span class=\"" + (i === tourStep ? "on" : "") + "\"></span>").join("");
+    const last = tourStep === TOUR.length - 1;
+    const html = '<div class="film">'
+      + '<div class="film-top"><span class="tour-kicker">Scene ' + (tourStep + 1) + " / " + TOUR.length + '</span><span class="film-live" id="filmlive">' + (tourMuted ? "Gedempt" : "Nova praat…") + "</span></div>"
+      + '<div class="film-body">' + NOVA_MINI.replace('class="tour-nova"', 'class="tour-nova speaking"') + '<div class="film-main">' + tourArt(s.art) + '<h3>' + esc(s.t) + '</h3><div class="tour-visual">' + chips + "</div></div></div>"
+      + '<div class="tour-progress" aria-hidden="true">' + dots + "</div></div>";
+    const btns = [
+      [tourMuted ? "Geluid aan" : "Dempen", "", () => { tourMuted = !tourMuted; stopSpeech(); showTour(tourStep, tourPlaying); }],
+      ["Overslaan", "", () => finishTour(false)]
+    ];
+    if (tourStep > 0) btns.splice(1, 0, ["Vorige", "", () => showTour(tourStep - 1, false)]);
+    if (last) btns.push(["Aan de slag!", "go", () => finishTour(true)]);
+    else btns.push(["Volgende", "go", () => showTour(tourStep + 1, false)]);
+    $("mc").className = "mc tour-mc film-mc";
+    $("mc").innerHTML = html + '<div class="ctrl">' + btns.map((b, i) => '<button type="button" class="btn ' + (b[1] || "") + '" data-b="' + i + '">' + b[0] + "</button>").join("") + "</div>";
+    $("md").classList.add("show");
+    $("mc").querySelectorAll("[data-b]").forEach(el => el.onclick = () => {
+      const fn = btns[+el.dataset.b][2];
+      if (fn) fn();
+    });
+    speak(s.say, token, () => {
+      const live = $("filmlive");
+      if (live) live.textContent = last ? "Klaar" : "Volgende scene…";
+      const nova = $("mc").querySelector(".tour-nova");
+      if (nova) nova.classList.remove("speaking");
+      if (auto && tourPlaying && token === tourToken) {
+        setTimeout(() => {
+          if (token !== tourToken) return;
+          if (last) finishTour(true);
+          else showTour(tourStep + 1, true);
+        }, 550);
+      }
+    });
+  }
+  function finishTour(ok) {
+    tourPlaying = false;
+    tourToken++;
+    stopSpeech();
+    $("md").classList.remove("show");
+    $("mc").className = "mc";
+    tourSeen = true;
+    save();
+    const replay = $("tourreplay");
+    if (replay) replay.hidden = false;
+  }
+  function openTour() {
+    showTourGate();
+  }
+
   function bind() {
     $("wbtn").onclick = home;
     $("tbtn").onclick = () => {
@@ -758,6 +907,10 @@ let mode = 1, lang = "js", teach = false, menu = false, cat = "move";
     };
     $("guidebtn").onclick = guide;
     $("exportbtn").onclick = exportCSV;
+    const tourBtn = $("tourbtn");
+    const tourReplay = $("tourreplay");
+    if (tourBtn) tourBtn.onclick = openTour;
+    if (tourReplay) tourReplay.onclick = openTour;
     $("run").onclick = run;
     $("step").onclick = stepOnce;
     $("pause").onclick = togglePause;
@@ -797,9 +950,17 @@ let mode = 1, lang = "js", teach = false, menu = false, cat = "move";
         ta.setRangeText("    ", ta.selectionStart, ta.selectionEnd, "end");
       }
     });
-    $("md").addEventListener("click", ev => { if (ev.target.id === "md") $("md").classList.remove("show"); });
+    $("md").addEventListener("click", ev => {
+      if (ev.target.id === "md" && !$("mc").classList.contains("tour-mc")) $("md").classList.remove("show");
+    });
     document.addEventListener("keydown", ev => {
+      if (ev.key === "Escape" && $("mc").classList.contains("tour-mc")) return;
       if (ev.key === "Escape") $("md").classList.remove("show");
+      if ($("md").classList.contains("show") && $("mc").classList.contains("tour-mc")) {
+        if (ev.key === "ArrowRight" || ev.key === "Enter") { ev.preventDefault(); if (tourStep < TOUR.length - 1) showTour(tourStep + 1); else finishTour(true); }
+        if (ev.key === "ArrowLeft") { ev.preventDefault(); if (tourStep > 0) showTour(tourStep - 1); }
+        return;
+      }
       if ((ev.ctrlKey || ev.metaKey) && ev.key === "Enter") { ev.preventDefault(); if (!document.body.classList.contains("home")) run(); }
       if (ev.target.matches("textarea, input, select")) return;
       if (document.body.classList.contains("home")) return;
@@ -812,4 +973,11 @@ let mode = 1, lang = "js", teach = false, menu = false, cat = "move";
   load();
   bind();
   home();
+  if (window.speechSynthesis) {
+    speechSynthesis.getVoices();
+    speechSynthesis.addEventListener("voiceschanged", () => speechSynthesis.getVoices());
+  }
+  const replay = $("tourreplay");
+  if (replay) replay.hidden = !tourSeen;
+  if (!tourSeen) setTimeout(openTour, 450);
 })();
