@@ -221,7 +221,7 @@ let mode = 1, lang = "js", teach = false, menu = false, cat = "move";
     const H = frame.grid.length, W = frame.grid[0].length;
     const wrap = document.querySelector(".boardwrap");
     const b = $("board");
-    const gap = 4, pad = 12;
+    const gap = 5, pad = 10;
     const cell = Math.max(18, Math.min(64, Math.floor(Math.min(
       (wrap.clientWidth - pad * 2 - gap * (W - 1)) / W,
       (Math.max(wrap.clientHeight, 180) - 46 - pad * 2 - gap * (H - 1)) / H
@@ -237,7 +237,7 @@ let mode = 1, lang = "js", teach = false, menu = false, cat = "move";
     view = s;
     const b = $("board");
     const cell = +b.dataset.cell || 36;
-    const gap = 4, pad = 12;
+    const gap = 5, pad = 10;
     const d = $("dr");
     if (d) {
       d.style.width = cell + "px";
@@ -696,7 +696,7 @@ let mode = 1, lang = "js", teach = false, menu = false, cat = "move";
       const d = doneOf(w.id);
       const pr = !open ? "Rond " + WORLDS[i - 1].n + " af" : d.length >= w.levels.length ? "Voltooid" : d.length ? "Opdracht " + (d.length + 1) + " van " + w.levels.length : "Nog niet begonnen";
       const kd = w.kerndoelen ? '<p class="kd">' + esc(w.kerndoelen) + "</p>" : "";
-      return '<article class="wcard ' + w.k + (open ? "" : " off") + '"><span class="wid mono">0' + (i + 1) + '/06</span><div class="art">' + w.art + '</div><div class="wbody"><span class="lvl">' + w.k + " · " + w.modus + "</span><h3>" + esc(w.n) + "</h3><p>" + esc(w.d) + "</p>" + kd + '<div class="pbar"><i style="width:' + (open ? d.length / w.levels.length * 100 : 0) + '%"></i></div><div class="pr">' + esc(pr) + '</div><div class="ctrl"><button type="button" class="btn go" data-play="' + i + '"' + (open ? "" : " disabled") + '>Speel</button><button type="button" class="btn" data-reset="' + i + '"' + (d.length ? "" : " disabled") + ">Opnieuw</button></div></div></article>";
+      return '<article class="wcard ' + w.k + (open ? "" : " off") + '"><span class="wid mono">Wereld ' + (i + 1) + '</span><div class="art">' + w.art + '</div><div class="wbody"><span class="lvl">' + w.k + " · " + w.modus + "</span><h3>" + esc(w.n) + "</h3><p>" + esc(w.d) + "</p>" + kd + '<div class="pbar"><i style="width:' + (open ? d.length / w.levels.length * 100 : 0) + '%"></i></div><div class="pr">' + esc(pr) + '</div><div class="ctrl"><button type="button" class="btn go" data-play="' + i + '"' + (open ? "" : " disabled") + '>Speel</button><button type="button" class="btn" data-reset="' + i + '"' + (d.length ? "" : " disabled") + ">Opnieuw</button></div></div></article>";
     }).join("");
   }
   function playWorld(index) {

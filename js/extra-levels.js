@@ -128,7 +128,7 @@
     catalog.LESKAART = LESKAART;
     catalog.GUIDE = [
       { h: "Drie niveaus, één programma", p: "Visueel is tikken met iconen. Blokken is slepen en nesten (herhaal, als, zolang). Code is JavaScript of Python. Wisselen laat hetzelfde programma in de andere vorm zien." },
-      { h: "Opbouw", p: "Zes werelden, elk twaalf opdrachten. Skyline en Hydrofarm: volgorde, draaien, herhalen. Orbit en Datacenter: keuzes en sensoren. Mars en Diepzee: functies en while-lussen." },
+      { h: "Opbouw", p: "Zes werelden, elk twaalf opdrachten. Elke nieuwe vaardigheid begint op een makkelijke baan. De opdracht erna lijkt erop, maar de route is anders: het vorige programma werkt niet zomaar opnieuw. Skyline en Hydrofarm: volgorde, draaien, herhalen. Orbit en Datacenter: keuzes en sensoren. Mars en Diepzee: functies en while-lussen." },
       { h: "Lesopbouw (45–60 min)", p: "5 min briefing en demo · 30–40 min zelfstandig met tips (één tegelijk) · 10 min nabespreken. Optioneel: wissel van Visueel naar Blokken of Code op dezelfde opdracht." },
       { h: "Tips voor leerlingen", p: "Elke opdracht heeft drie tips. Tip 1 is een denkstap, tip 2 richtinggevend, tip 3 concreter. Laat leerlingen eerst zelf proberen." },
       { h: "Afspelen", p: "Start speelt het programma af. Stap voert één beweging uit. Pauze stopt tijdelijk. Snelheid past het tempo aan. Een botsing noemt de kijkrichting van Nova." },
