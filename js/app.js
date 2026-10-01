@@ -14,7 +14,7 @@
 
 let mode = 1, lang = "js", teach = false, menu = false, cat = "move";
   let wi = 0, lv = 0, active = -1, sel = "", timer = null, drag = null, skipClick = false, view = null, runToken = 0;
-  let prog = {}, done = {}, seen = [], hintsUsed = {}, play = null, paused = false, tourSeen = false, tourStep = 0;
+  let prog = {}, done = {}, seen = [], hintsUsed = {}, play = null, paused = false, tourSeen = false, tourWatched = false, tourStep = 0;
   let tourPlaying = false, tourMuted = false, tourToken = 0;
 
   const $ = id => document.getElementById(id);
@@ -51,7 +51,7 @@ let mode = 1, lang = "js", teach = false, menu = false, cat = "move";
         programs[id] = {};
         Object.keys(prog[id]).forEach(k => { programs[id][k] = E.strip(prog[id][k]); });
       });
-      localStorage.setItem(SAVE, JSON.stringify({ mode, lang, done, seen, programs, hintsUsed, tourSeen }));
+      localStorage.setItem(SAVE, JSON.stringify({ mode, lang, done, seen, programs, hintsUsed, tourSeen, tourWatched }));
     } catch (e) { /* volle of geblokkeerde opslag: de sessie werkt wel */ }
   }
   function heal(nodes) {
@@ -71,12 +71,13 @@ let mode = 1, lang = "js", teach = false, menu = false, cat = "move";
       seen = s.seen || [];
       hintsUsed = s.hintsUsed || {};
       tourSeen = !!s.tourSeen;
+      tourWatched = !!s.tourWatched;
       prog = {};
       Object.keys(s.programs || {}).forEach(id => {
         prog[id] = {};
         Object.keys(s.programs[id]).forEach(k => { prog[id][k] = heal(s.programs[id][k]); });
       });
-    } catch (e) { prog = {}; done = {}; seen = []; hintsUsed = {}; tourSeen = false; }
+    } catch (e) { prog = {}; done = {}; seen = []; hintsUsed = {}; tourSeen = false; tourWatched = false; }
   }
 
   function stamp(nodes) {
@@ -888,9 +889,15 @@ let mode = 1, lang = "js", teach = false, menu = false, cat = "move";
     $("md").classList.remove("show");
     $("mc").className = "mc";
     tourSeen = true;
+    if (ok) tourWatched = true;
     save();
-    const replay = $("tourreplay");
-    if (replay) replay.hidden = false;
+    paintTourButtons();
+  }
+  function paintTourButtons() {
+    const first = $("tourbtn");
+    const again = $("tourreplay");
+    if (first) first.hidden = tourWatched;
+    if (again) again.hidden = !tourWatched;
   }
   function openTour() {
     showTourGate();
@@ -977,7 +984,6 @@ let mode = 1, lang = "js", teach = false, menu = false, cat = "move";
     speechSynthesis.getVoices();
     speechSynthesis.addEventListener("voiceschanged", () => speechSynthesis.getVoices());
   }
-  const replay = $("tourreplay");
-  if (replay) replay.hidden = !tourSeen;
+  paintTourButtons();
   if (!tourSeen) setTimeout(openTour, 450);
 })();
