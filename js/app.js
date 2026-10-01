@@ -348,10 +348,13 @@ let mode = 1, lang = "js", teach = false, menu = false, cat = "move";
       return '<button type="button" class="ic" data-hid="' + n.hid + '" data-del="' + path + '" title="' + LABEL[n.op] + '">' + icon(n.op) + "</button>";
     }).join("");
   }
+  function addMark(label) {
+    return '<span class="addplus"><i aria-hidden="true">+</i>' + (label ? "<span>" + label + "</span>" : "") + "</span>";
+  }
   function socket(nodes, path, placeholder) {
     const on = sel === path ? " on" : "";
     const inner = nodes.map((n, i) => blockNode(n, path ? path + "/" + i : String(i))).join("");
-    return '<div class="socket' + on + '" data-socket="' + path + '">' + (inner || '<span class="ph">' + placeholder + "</span>") + "</div>";
+    return '<div class="socket' + on + '" data-socket="' + path + '">' + inner + addMark(inner ? "" : placeholder) + "</div>";
   }
   function blockNode(n, path) {
     const drag = ' draggable="true" data-path="' + path + '" data-hid="' + n.hid + '"';
@@ -414,7 +417,7 @@ let mode = 1, lang = "js", teach = false, menu = false, cat = "move";
     const tabHtml = mode === 2 && tabs.length > 1 ? '<div class="tabs">' + tabs.map(t => '<button type="button" data-cat="' + t[0] + '" class="' + (cat === t[0] ? "on" : "") + '">' + t[1] + "</button>").join("") + "</div>" : "";
     const program = mode === 1
       ? '<div class="strip">' + (visualNodes(list(), "") || '<span class="hint">Tik een icoon om te beginnen.</span>') + "</div>"
-      : '<div class="stack"><div class="blk start">▶ Start</div>' + socket(list(), "", "tik of sleep een blok") + "</div>"
+      : '<div class="stack"><div class="blk start">▶ Start</div>' + socket(list(), "", "voeg een blok toe") + "</div>"
         + '<p class="selnote">Nieuwe blokken komen in <b>' + esc(selLabel()) + "</b>. Klik een vak om dat te wijzigen.</p>";
     let html = '<div class="tag">Niveau ' + mode + " · " + (mode === 1 ? "Visueel" : "Blokken") + "</div><h2>" + (mode === 1 ? "Tik de iconen" : "Bouw je programma") + "</h2>"
       + tabHtml + '<div class="pal">' + pal + "</div>" + program
