@@ -9,11 +9,24 @@
   --tile: #dce6f1;
   --warn: #dc2626;
   --gl: #d97706;
+  --go: #0f766e;
   --shadow: none;
   color-scheme: light;
   box-sizing: border-box;
   padding-top: env(safe-area-inset-top, 0px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+:root[data-theme="dark"] {
+  --bg: #060b14;
+  --pn: #0c1422;
+  --ink: #e8eef7;
+  --mut: #8b9bb0;
+  --ac: #2dd4bf;
+  --ac2: #38bdf8;
+  --ln: #1c2a40;
+  --tile: #152238;
+  --gl: #fbbf24;
+  color-scheme: dark;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -26,7 +39,6 @@
     --ln: #1c2a40;
     --tile: #152238;
     --gl: #fbbf24;
-    --shadow: none;
     color-scheme: dark;
   }
 }
@@ -92,8 +104,8 @@ body.home .gh .dots { display: none; }
 .btn:hover:not(:disabled) { border-color: var(--ac); }
 .btn:disabled { opacity: .4; cursor: not-allowed; }
 .btn.go {
-  background: var(--ac);
-  color: #fff; border-color: var(--ac);
+  background: var(--go);
+  color: #fff; border-color: var(--go);
 }
 .btn.go:hover:not(:disabled) { filter: brightness(1.08); }
 
