@@ -28,8 +28,8 @@ let mode = 1, lang = "js", teach = false, menu = false, cat = "move";
   const stroke = 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
   const ICO = {
     F: svg('<path d="M12 19V5M12 5l-5 5M12 5l5 5" ' + stroke + "/>"),
-    L: svg('<path d="M9 14a4 4 0 1 0-1-3" ' + stroke + '/><path d="M8 7V4H5" ' + stroke + "/>"),
-    R: svg('<path d="M15 14a4 4 0 1 1 1-3" ' + stroke + '/><path d="M16 7V4h3" ' + stroke + "/>"),
+    L: svg('<path d="M18 20V11a5 5 0 0 0-5-5H5" ' + stroke + ' stroke-width="2.4"/><path d="M9 2L5 6l4 4" ' + stroke + ' stroke-width="2.4"/>'),
+    R: svg('<path d="M6 20V11a5 5 0 0 1 5-5h8" ' + stroke + ' stroke-width="2.4"/><path d="M15 2l4 4-4 4" ' + stroke + ' stroke-width="2.4"/>'),
     C: svg('<path d="M13 3L5 13h6l-1 8 8-10h-6l1-8z" ' + stroke + "/>"),
     W: svg('<path d="M12 3s5 6 5 9a5 5 0 0 1-10 0c0-3 5-9 5-9z" ' + stroke + "/>"),
     H: svg('<path d="M12 21V10M12 10c-4 0-6-3-6-3s2 5 6 3c4 2 6 0 6-3s-2 3-6 3z" ' + stroke + "/>"),
