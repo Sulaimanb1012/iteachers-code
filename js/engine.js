@@ -373,7 +373,7 @@
       if (c === "r" || c === "b") needZ++;
     }));
     const tr = [];
-    let stopped = false, err = "";
+    let stopped = false, arrived = false, err = "";
     const fns = {};
     function snap(hid, bad) {
       return { x, y, a, hid: hid || 0, bad: !!bad, carry, grid: grid.map(r => r.slice()) };
@@ -411,7 +411,10 @@
       if (f.ch === "x") return fail((terms.shield || "Een schild blokkeert de route. Schakel het eerst uit.") + " Nova keek " + looking + ".");
       if (f.ch === "v") return fail((terms.plant || "De plant is droog. Geef eerst water.") + " Nova keek " + looking + ".");
       if (f.ch === "k") return fail((terms.crater || "Een krater blokkeert de route. Bouw eerst een brug.") + " Nova keek " + looking + ".");
-      if (!f.ch || f.ch === "#" || !WALK.has(f.ch)) return fail((terms.wall || "Nova botste tegen een obstakel.") + " Ze keek " + looking + ".");
+      if (!f.ch || f.ch === "#" || !WALK.has(f.ch)) {
+        if (grid[y][x] === "E") { arrived = true; return true; }
+        return fail((terms.wall || "Nova botste tegen een obstakel.") + " Ze keek " + looking + ".");
+      }
       x = f.nx; y = f.ny;
       return true;
     }
@@ -451,22 +454,22 @@
       return true;
     }
     function execList(list, depth) {
-      if (stopped) return;
+      if (stopped || arrived) return;
       for (const node of list || []) {
-        if (stopped) return;
+        if (stopped || arrived) return;
         execNode(node, depth);
       }
     }
     function execNode(node, depth) {
-      if (stopped) return;
+      if (stopped || arrived) return;
       if (node.op === "REP") {
         const n = Math.max(0, Math.min(node.n | 0, 50));
-        for (let k = 0; k < n && !stopped; k++) execList(node.body, depth);
+        for (let k = 0; k < n && !stopped && !arrived; k++) execList(node.body, depth);
         return;
       }
       if (node.op === "WHILE") {
         let guard = 0;
-        while (!stopped && !sense("gedockt")) {
+        while (!stopped && !arrived && !sense("gedockt")) {
           if (++guard > 400) { fail("Deze lus stopt niet. Nova heeft een limiet bereikt."); return; }
           execList(node.body, depth);
         }
