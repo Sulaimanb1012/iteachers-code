@@ -12,12 +12,16 @@
   };
   const SAVE = "itc-meridiaan-v1";
 
-let mode = 1, lang = "js", teach = false, menu = false, cat = "move";
+const demo = new URLSearchParams(location.search).get("demo") === "1";
+let mode = 1, lang = "js", teach = demo, menu = false, cat = "move";
   let wi = 0, lv = 0, active = -1, sel = "", timer = null, drag = null, skipClick = false, view = null, runToken = 0;
   let prog = {}, done = {}, seen = [], hintsUsed = {}, play = null, paused = false, tourSeen = false, tourWatched = false, tourStep = 0;
   let tourPlaying = false, tourMuted = false, tourToken = 0;
 
   const $ = id => document.getElementById(id);
+  const SOUND_KEY = "itc-sound";
+  let soundOn = true, audioCtx = null, soundNodes = [];
+  try { soundOn = localStorage.getItem(SOUND_KEY) !== "off"; } catch (e) { soundOn = true; }
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const world = () => WORLDS[wi];
   const level = () => world().levels[lv];
@@ -281,7 +285,7 @@ let mode = 1, lang = "js", teach = false, menu = false, cat = "move";
     const kd = world().kerndoelen ? " · Kerndoelen: " + esc(world().kerndoelen) : "";
     const les = world().les ? " · Les: " + esc(world().les) : "";
     box.innerHTML = '<div class="doel"><b>Docent</b> · ' + esc(L.leer) + kd + les + ' <button type="button" class="btn" id="sol">Laad voorbeeldoplossing</button></div>';
-    $("sol").onclick = () => { list().splice(0, list().length, ...heal(E.parseDsl(L.sol))); sel = ""; save(); editor(); board(); };
+    $("sol").onclick = () => { fillSolution(); save(); editor(); board(); };
   }
   function hintKey() { return world().id + ":" + lv; }
   function resetHintsUI() {
@@ -532,6 +536,7 @@ let mode = 1, lang = "js", teach = false, menu = false, cat = "move";
   }
 
   function stop() {
+    hush();
     runToken++;
     clearTimeout(timer);
     timer = null;
@@ -555,6 +560,7 @@ let mode = 1, lang = "js", teach = false, menu = false, cat = "move";
     return true;
   }
   function beginPlay() {
+    hush();
     if (!syncCode()) return null;
     const res = E.run(world(), level(), list());
     $("ov").classList.remove("show");
@@ -583,9 +589,84 @@ let mode = 1, lang = "js", teach = false, menu = false, cat = "move";
       setTimeout(() => { if (session.token === runToken) showWin(stars); }, 350);
     }
   }
+  function hush() {
+    soundNodes.forEach(node => { try { node.stop(); } catch (e) { /* al gestopt */ } });
+    soundNodes = [];
+  }
+  function audio() {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    if (!audioCtx) audioCtx = new Ctx();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    return audioCtx;
+  }
+  function tone(freq, at, dur, type, volume) {
+    const ctx = audio();
+    if (!ctx) return;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(volume, at);
+    gain.gain.exponentialRampToValueAtTime(0.001, at + dur);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(at);
+    osc.stop(at + dur + 0.02);
+    soundNodes.push(osc);
+  }
+  function playStep() {
+    if (!soundOn) return;
+    const ctx = audio();
+    if (!ctx) return;
+    tone(280, ctx.currentTime, 0.035, "triangle", 0.025);
+  }
+  function playPickup() {
+    if (!soundOn) return;
+    const ctx = audio();
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    tone(660, t, 0.07, "sine", 0.05);
+    tone(880, t + 0.06, 0.09, "sine", 0.04);
+  }
+  function playCrash() {
+    if (!soundOn) return;
+    const ctx = audio();
+    if (!ctx) return;
+    tone(160, ctx.currentTime, 0.14, "triangle", 0.06);
+  }
+  function playWin() {
+    if (!soundOn) return;
+    const ctx = audio();
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    [523, 659, 784].forEach((freq, i) => tone(freq, t + i * 0.09, 0.12, "sine", 0.05));
+  }
+  function goods(grid) {
+    let n = 0;
+    grid.forEach(row => row.forEach(ch => { if (ch === "c" || ch === "o" || ch === "r" || ch === "b") n++; }));
+    return n;
+  }
+  function cueFrame(prev, frame) {
+    if (!soundOn || !prev || !frame) return;
+    try {
+      if (frame.bad) { playCrash(); return; }
+      if (goods(frame.grid) < goods(prev.grid)) { playPickup(); return; }
+      if (frame.x !== prev.x || frame.y !== prev.y) playStep();
+    } catch (e) { /* geluid mag de vlucht niet stoppen */ }
+  }
+  function paintSoundBtn() {
+    const btn = $("soundbtn");
+    if (!btn) return;
+    btn.textContent = soundOn ? "Geluid" : "Stil";
+    btn.setAttribute("aria-pressed", soundOn ? "true" : "false");
+    btn.setAttribute("aria-label", soundOn ? "Zet geluid uit" : "Zet geluid aan");
+  }
   function advance(session) {
     if (session.token !== runToken) return false;
-    paint(session.res.tr[session.i] || session.res.tr[session.res.tr.length - 1]);
+    const frame = session.res.tr[session.i] || session.res.tr[session.res.tr.length - 1];
+    paint(frame);
+    if (session.i < session.res.tr.length) cueFrame(session.i > 0 ? session.res.tr[session.i - 1] : null, frame);
     session.i++;
     if (session.i >= session.res.tr.length) {
       finishPlay(session);
@@ -606,6 +687,7 @@ let mode = 1, lang = "js", teach = false, menu = false, cat = "move";
     $("ov").innerHTML = '<div><h3>' + (last ? "Wereld voltooid" : "Missie geslaagd") + '</h3><div class="stars">' + "★".repeat(stars) + "☆".repeat(3 - stars) + '</div><button type="button" class="btn go" id="nx">' + (last ? "Naar werelden" : "Volgende opdracht") + "</button></div>";
     $("ov").classList.add("show");
     $("nx").onclick = () => { if (last) home(); else go(lv + 1); };
+    try { playWin(); } catch (e) { /* de uitslag blijft staan */ }
   }
   function run() {
     if (play && !paused) return;
@@ -670,12 +752,17 @@ let mode = 1, lang = "js", teach = false, menu = false, cat = "move";
     }
   }
 
+  function fillSolution() {
+    list().splice(0, list().length, ...heal(E.parseDsl(level().sol)));
+    sel = "";
+  }
   function go(i) {
     stop();
     lv = i;
     sel = "";
     cat = "move";
     menu = false;
+    if (demo) fillSolution();
     mission();
     dots();
     board();
@@ -922,6 +1009,14 @@ let mode = 1, lang = "js", teach = false, menu = false, cat = "move";
     if (tourBtn) tourBtn.onclick = openTour;
     if (tourReplay) tourReplay.onclick = openTour;
     $("run").onclick = run;
+    const soundBtn = $("soundbtn");
+    if (soundBtn) soundBtn.onclick = () => {
+      soundOn = !soundOn;
+      try { localStorage.setItem(SOUND_KEY, soundOn ? "on" : "off"); } catch (e) { /* negeer */ }
+      if (soundOn) audio();
+      paintSoundBtn();
+    };
+    paintSoundBtn();
     $("step").onclick = stepOnce;
     $("pause").onclick = togglePause;
     $("hintbtn").onclick = showHint;
@@ -982,11 +1077,15 @@ let mode = 1, lang = "js", teach = false, menu = false, cat = "move";
 
   load();
   bind();
+  if (demo) {
+    $("tbtn").classList.add("go");
+    $("tbtn").setAttribute("aria-pressed", "true");
+  }
   home();
   if (window.speechSynthesis) {
     speechSynthesis.getVoices();
     speechSynthesis.addEventListener("voiceschanged", () => speechSynthesis.getVoices());
   }
   paintTourButtons();
-  if (!tourSeen) setTimeout(openTour, 450);
+  if (!tourSeen && !demo) setTimeout(openTour, 450);
 })();

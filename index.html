@@ -10,7 +10,7 @@
 <script>
 try { var t = localStorage.getItem("itc-theme"); if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t); } catch (e) {}
 </script>
-<link rel="stylesheet" href="css/app.css?v=20261001e">
+<link rel="stylesheet" href="css/app.css?v=20261005e">
 </head>
 <body class="home">
 <header>
@@ -39,13 +39,15 @@ try { var t = localStorage.getItem("itc-theme"); if (t === "light" || t === "dar
           <button type="button" class="btn" id="reset">Opnieuw</button>
           <button type="button" class="btn" id="clear">Wis programma</button>
         </div>
-        <label class="speed">Snelheid
+        <div class="speed">
+          <label for="speed">Snelheid</label>
           <select id="speed" aria-label="Afspeelsnelheid">
             <option value="500">Langzaam</option>
             <option value="300" selected>Normaal</option>
             <option value="140">Snel</option>
           </select>
-        </label>
+          <button type="button" class="btn" id="soundbtn" aria-pressed="true">Geluid</button>
+        </div>
       </div>
       <div class="boardwrap">
         <div class="board" id="board"></div>
@@ -118,7 +120,7 @@ try { var t = localStorage.getItem("itc-theme"); if (t === "light" || t === "dar
 <script src="js/engine.js?v=20260929c"></script>
 <script src="js/extra-levels.js?v=20260929"></script>
 <script src="js/catalog.js?v=20260929"></script>
-<script src="js/app.js?v=20261001e"></script>
+<script src="js/app.js?v=20261005d"></script>
 <script src="js/theme.js?v=20261001"></script>
 </body>
 </html>
