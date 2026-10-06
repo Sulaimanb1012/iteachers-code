@@ -227,9 +227,14 @@ let mode = 1, lang = "js", teach = demo, menu = false, cat = "move";
     const wrap = document.querySelector(".boardwrap");
     const b = $("board");
     const gap = 5, pad = 10;
-    const cell = Math.max(18, Math.min(64, Math.floor(Math.min(
+    const extras = [...wrap.children].filter(el => el !== b && !el.hidden);
+    const styles = getComputedStyle(wrap);
+    const rowGap = parseFloat(styles.rowGap || styles.gap) || 0;
+    const reserved = extras.reduce((n, el) => n + el.offsetHeight, 0) + rowGap * extras.length;
+    const availH = wrap.clientHeight - reserved;
+    const cell = Math.max(12, Math.min(64, Math.floor(Math.min(
       (wrap.clientWidth - pad * 2 - gap * (W - 1)) / W,
-      (Math.max(wrap.clientHeight, 180) - 46 - pad * 2 - gap * (H - 1)) / H
+      (Math.max(availH, 64) - pad * 2 - gap * (H - 1)) / H
     ))));
     b.style.width = (pad * 2 + cell * W + gap * (W - 1)) + "px";
     b.style.height = (pad * 2 + cell * H + gap * (H - 1)) + "px";
@@ -306,6 +311,7 @@ let mode = 1, lang = "js", teach = demo, menu = false, cat = "move";
       $("hintn").textContent = used + " / " + hints.length;
       $("hinttxt").textContent = hints[used - 1];
     } else box.hidden = true;
+    fit();
   }
   function showHint() {
     const hints = level().hints || [];
@@ -597,50 +603,56 @@ let mode = 1, lang = "js", teach = demo, menu = false, cat = "move";
     const Ctx = window.AudioContext || window.webkitAudioContext;
     if (!Ctx) return null;
     if (!audioCtx) audioCtx = new Ctx();
-    if (audioCtx.state === "suspended") audioCtx.resume();
     return audioCtx;
+  }
+  function unlockAudio() {
+    const ctx = audio();
+    if (!ctx) return Promise.resolve(false);
+    if (ctx.state === "running") return Promise.resolve(true);
+    return ctx.resume().then(() => ctx.state === "running").catch(() => false);
   }
   function tone(freq, at, dur, type, volume) {
     const ctx = audio();
-    if (!ctx) return;
+    if (!ctx || ctx.state !== "running") return;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
+    const start = Math.max(at, ctx.currentTime);
     osc.type = type;
     osc.frequency.value = freq;
-    gain.gain.setValueAtTime(volume, at);
-    gain.gain.exponentialRampToValueAtTime(0.001, at + dur);
+    gain.gain.setValueAtTime(volume, start);
+    gain.gain.exponentialRampToValueAtTime(0.001, start + dur);
     osc.connect(gain);
     gain.connect(ctx.destination);
-    osc.start(at);
-    osc.stop(at + dur + 0.02);
+    osc.start(start);
+    osc.stop(start + dur + 0.02);
     soundNodes.push(osc);
   }
   function playStep() {
     if (!soundOn) return;
     const ctx = audio();
     if (!ctx) return;
-    tone(280, ctx.currentTime, 0.035, "triangle", 0.025);
+    tone(280, ctx.currentTime, 0.05, "triangle", 0.16);
   }
   function playPickup() {
     if (!soundOn) return;
     const ctx = audio();
     if (!ctx) return;
     const t = ctx.currentTime;
-    tone(660, t, 0.07, "sine", 0.05);
-    tone(880, t + 0.06, 0.09, "sine", 0.04);
+    tone(660, t, 0.08, "sine", 0.18);
+    tone(880, t + 0.07, 0.1, "sine", 0.14);
   }
   function playCrash() {
     if (!soundOn) return;
     const ctx = audio();
     if (!ctx) return;
-    tone(160, ctx.currentTime, 0.14, "triangle", 0.06);
+    tone(160, ctx.currentTime, 0.16, "triangle", 0.22);
   }
   function playWin() {
     if (!soundOn) return;
     const ctx = audio();
     if (!ctx) return;
     const t = ctx.currentTime;
-    [523, 659, 784].forEach((freq, i) => tone(freq, t + i * 0.09, 0.12, "sine", 0.05));
+    [523, 659, 784].forEach((freq, i) => tone(freq, t + i * 0.09, 0.14, "sine", 0.16));
   }
   function goods(grid) {
     let n = 0;
@@ -690,6 +702,7 @@ let mode = 1, lang = "js", teach = demo, menu = false, cat = "move";
     try { playWin(); } catch (e) { /* de uitslag blijft staan */ }
   }
   function run() {
+    unlockAudio();
     if (play && !paused) return;
     if (play && paused) {
       paused = false;
@@ -715,6 +728,7 @@ let mode = 1, lang = "js", teach = demo, menu = false, cat = "move";
     }, delay());
   }
   function stepOnce() {
+    unlockAudio();
     if (play && !paused) return;
     if (!play) {
       const session = beginPlay();
@@ -842,7 +856,7 @@ let mode = 1, lang = "js", teach = demo, menu = false, cat = "move";
 
   const NOVA_MINI = '<div class="tour-nova" aria-hidden="true"><svg viewBox="0 0 200 150"><defs><radialGradient id="tng" cx=".4" cy=".3"><stop offset="0" stop-color="#f0f9ff"/><stop offset="1" stop-color="#94a3b8"/></radialGradient><radialGradient id="tgl"><stop offset="0" stop-color="#2dd4bf" stop-opacity=".5"/><stop offset="1" stop-color="#2dd4bf" stop-opacity="0"/></radialGradient></defs><ellipse cx="100" cy="138" rx="48" ry="7" fill="#0003"/><g class="float"><circle cx="100" cy="82" r="62" fill="url(#tgl)"/><path d="M52 62L70 76M148 62L130 76" stroke="#64748b" stroke-width="5"/><ellipse class="rot2" cx="46" cy="56" rx="32" ry="5" fill="#38bdf8" opacity=".7"/><ellipse class="rot2" cx="154" cy="56" rx="32" ry="5" fill="#38bdf8" opacity=".7"/><rect x="56" y="62" width="88" height="62" rx="30" fill="url(#tng)"/><rect x="66" y="74" width="68" height="34" rx="17" fill="#0b1220"/><circle class="eyes" cx="86" cy="91" r="7" fill="#2dd4bf"/><circle class="eyes" cx="114" cy="91" r="7" fill="#2dd4bf"/><path d="M100 62V48" stroke="#64748b" stroke-width="4"/><circle cx="100" cy="46" r="5" fill="#f59e0b"/></g></svg></div>';
 
-  /* Korte zinnen die Nova hardop zegt — filmpje, weinig lezen. */
+  /* Korte zinnen die Nova hardop zegt. Dezelfde tekst staat in audio/tour/0.mp3 t/m 5.mp3. */
   const TOUR = [
     {
       t: "Hoi, ik ben Nova!",
@@ -882,8 +896,15 @@ let mode = 1, lang = "js", teach = demo, menu = false, cat = "move";
     }
   ];
 
+  let tourClip = null;
   function stopSpeech() {
     try { window.speechSynthesis && speechSynthesis.cancel(); } catch (e) { /* ignore */ }
+    if (!tourClip) return;
+    const clip = tourClip;
+    tourClip = null;
+    clip.onended = null;
+    clip.onerror = null;
+    try { clip.pause(); } catch (e) { /* al gestopt */ }
   }
   function pickVoice() {
     if (!window.speechSynthesis) return null;
@@ -893,21 +914,75 @@ let mode = 1, lang = "js", teach = demo, menu = false, cat = "move";
       || voices.find(v => /dutch|nederlands/i.test(v.name))
       || null;
   }
-  function speak(text, token, onEnd) {
-    stopSpeech();
-    if (tourMuted || !window.speechSynthesis) {
-      setTimeout(() => { if (token === tourToken && onEnd) onEnd(); }, Math.min(4200, 900 + text.length * 45));
+  function waitLine(text, token, onEnd) {
+    setTimeout(() => { if (token === tourToken && onEnd) onEnd(); }, Math.min(4200, 900 + text.length * 45));
+  }
+  function speakBrowser(text, token, onEnd) {
+    if (!window.speechSynthesis) {
+      waitLine(text, token, onEnd);
       return;
     }
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = "nl-NL";
-    u.rate = 1.02;
-    u.pitch = 1.08;
-    const voice = pickVoice();
-    if (voice) u.voice = voice;
-    u.onend = () => { if (token === tourToken && onEnd) onEnd(); };
-    u.onerror = () => { if (token === tourToken && onEnd) onEnd(); };
-    speechSynthesis.speak(u);
+    const go = () => {
+      if (token !== tourToken) return;
+      const u = new SpeechSynthesisUtterance(text);
+      const voice = pickVoice();
+      if (voice) {
+        u.voice = voice;
+        u.lang = voice.lang || "nl-NL";
+      } else u.lang = "nl-NL";
+      u.rate = 1;
+      u.pitch = 1.05;
+      u.onend = () => { if (token === tourToken && onEnd) onEnd(); };
+      u.onerror = (ev) => {
+        if (token !== tourToken) return;
+        const reason = ev && ev.error;
+        if (reason === "interrupted" || reason === "canceled") return;
+        if (onEnd) onEnd();
+      };
+      try { speechSynthesis.cancel(); } catch (e) { /* ignore */ }
+      setTimeout(() => {
+        if (token !== tourToken) return;
+        speechSynthesis.speak(u);
+        try { speechSynthesis.resume(); } catch (e) { /* ignore */ }
+      }, 60);
+    };
+    if ((speechSynthesis.getVoices() || []).length) go();
+    else {
+      let started = false;
+      const begin = () => {
+        if (started) return;
+        started = true;
+        speechSynthesis.removeEventListener("voiceschanged", begin);
+        go();
+      };
+      speechSynthesis.addEventListener("voiceschanged", begin);
+      speechSynthesis.getVoices();
+      setTimeout(begin, 350);
+    }
+  }
+  function speak(text, token, onEnd) {
+    stopSpeech();
+    if (tourMuted) {
+      waitLine(text, token, onEnd);
+      return;
+    }
+    const clip = new Audio("audio/tour/" + tourStep + ".mp3");
+    tourClip = clip;
+    let used = false;
+    clip.onended = () => {
+      if (used || token !== tourToken) return;
+      used = true;
+      if (onEnd) onEnd();
+    };
+    const fallback = () => {
+      if (used || token !== tourToken) return;
+      used = true;
+      if (tourClip === clip) tourClip = null;
+      speakBrowser(text, token, onEnd);
+    };
+    clip.onerror = fallback;
+    const pending = clip.play();
+    if (pending && pending.catch) pending.catch(fallback);
   }
   function tourArt(kind) {
     const map = {
@@ -924,7 +999,7 @@ let mode = 1, lang = "js", teach = demo, menu = false, cat = "move";
     stopSpeech();
     tourPlaying = false;
     $("mc").className = "mc tour-mc film-mc";
-    $("mc").innerHTML = '<div class="film-gate">' + NOVA_MINI + '<h3>Nova’s filmpje</h3><p>Kort. Met geluid. Bijna geen tekst.</p><button type="button" class="btn go film-play" id="filmstart">▶ Afspelen</button><button type="button" class="btn" id="filmskip">Overslaan</button><p class="film-note">Zet je geluid aan. Werkt het best in Chrome of Edge.</p></div>';
+    $("mc").innerHTML = '<div class="film-gate">' + NOVA_MINI + '<h3>Nova’s filmpje</h3><p>Kort. Met geluid. Bijna geen tekst.</p><button type="button" class="btn go film-play" id="filmstart">▶ Afspelen</button><button type="button" class="btn" id="filmskip">Overslaan</button><p class="film-note">Zet je geluid aan.</p></div>';
     $("md").classList.add("show");
     $("filmstart").onclick = () => { tourPlaying = true; showTour(0, true); };
     $("filmskip").onclick = () => finishTour(false);
@@ -964,11 +1039,8 @@ let mode = 1, lang = "js", teach = demo, menu = false, cat = "move";
       const nova = $("mc").querySelector(".tour-nova");
       if (nova) nova.classList.remove("speaking");
       if (auto && tourPlaying && token === tourToken) {
-        setTimeout(() => {
-          if (token !== tourToken) return;
-          if (last) finishTour(true);
-          else showTour(tourStep + 1, true);
-        }, 550);
+        if (last) finishTour(true);
+        else showTour(tourStep + 1, true);
       }
     });
   }
@@ -1013,7 +1085,7 @@ let mode = 1, lang = "js", teach = demo, menu = false, cat = "move";
     if (soundBtn) soundBtn.onclick = () => {
       soundOn = !soundOn;
       try { localStorage.setItem(SOUND_KEY, soundOn ? "on" : "off"); } catch (e) { /* negeer */ }
-      if (soundOn) audio();
+      if (soundOn) unlockAudio().then(ok => { if (ok && soundOn) playStep(); });
       paintSoundBtn();
     };
     paintSoundBtn();

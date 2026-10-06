@@ -69,7 +69,7 @@ header {
   border-bottom: 1px solid var(--ln);
   background: var(--pn);
 }
-.logo { display: flex; gap: 10px; align-items: center; font-size: 17px; font-weight: 800; letter-spacing: -.02em; }
+.logo { display: flex; gap: 10px; align-items: center; font-size: 17px; font-weight: 800; letter-spacing: -.02em; flex: none; max-width: 100%; }
 .logo b { color: var(--ac); }
 .logo small { display: block; margin: 0; color: var(--mut); font-size: 11px; font-weight: 600; letter-spacing: 0; }
 .lgi {
@@ -78,11 +78,10 @@ header {
     radial-gradient(circle at 30% 30%, #fff8, transparent 40%),
     linear-gradient(135deg, var(--ac), var(--ac2));
 }
-.gh { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+.gh { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; min-width: 0; }
 body.home .gh .dots { display: none; }
 
-.dots { display: flex; align-items: center; overflow-x: auto; max-width: min(52vw, 560px); scrollbar-width: none; }
-.dots::-webkit-scrollbar { display: none; }
+.dots { display: flex; align-items: center; overflow-x: auto; max-width: min(52vw, 560px); flex: none; scrollbar-width: thin; }
 .dot {
   width: 26px; height: 26px; flex: none; border-radius: 50%;
   border: 1px solid var(--ln); background: var(--pn); color: var(--mut);
@@ -296,7 +295,7 @@ body.home #game, body:not(.home) #home { display: none; }
 
 body:not(.home) { height: 100dvh; overflow: hidden; display: flex; flex-direction: column; }
 body:not(.home) header { flex: none; }
-#game { flex: 1; min-height: 0; height: auto; display: flex; flex-direction: column; overflow: hidden; }
+#game { flex: 1; min-height: 0; height: auto; display: flex; flex-direction: column; overflow: auto; }
 .top { padding: 8px 14px 0; flex: none; }
 #mission {
   display: grid;
@@ -319,7 +318,7 @@ body:not(.home) header { flex: none; }
 #tn { padding-top: 8px; }
 #tn:empty { display: none; }
 main {
-  flex: 1; min-height: 0;
+  flex: 1 0 auto; min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 46%) minmax(0, 1fr);
   gap: 8px;
@@ -328,10 +327,10 @@ main {
 main .card { min-height: 0; padding: 12px 14px; display: flex; flex-direction: column; }
 #boardCard { overflow: hidden; }
 #editorCard { overflow: visible; }
-.ch { display: flex; justify-content: space-between; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+.ch { display: flex; justify-content: space-between; gap: 8px; align-items: center; align-content: flex-start; margin-bottom: 8px; flex-wrap: wrap; flex: none; }
 .ch h2 { margin: 0; font-size: 15px; }
 .foot { margin-top: 8px; }
-.boardwrap { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
+.boardwrap { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: safe center; gap: 8px; overflow: auto; }
 .board {
   position: relative; display: grid; gap: 5px; padding: 10px; border-radius: 8px;
   background: color-mix(in srgb, var(--bg) 55%, var(--pn));
@@ -402,7 +401,7 @@ main .card { min-height: 0; padding: 12px 14px; display: flex; flex-direction: c
 .stars { font-size: 28px; letter-spacing: 4px; color: var(--gl); text-shadow: 0 0 12px var(--gl); margin-bottom: 8px; }
 
 #seghost { position: relative; z-index: 4; flex: none; padding-bottom: 8px; }
-#editor { overflow: auto; min-height: 0; flex: 1; scrollbar-width: thin; }
+#editor { overflow: auto; min-height: 160px; flex: 1; scrollbar-width: thin; }
 .seg { display: flex; background: color-mix(in srgb, var(--bg) 80%, var(--pn)); border: 1px solid var(--ln); border-radius: 12px; padding: 3px; gap: 3px; width: max-content; max-width: 100%; position: relative; }
 .seg > button { border: 0; background: none; color: var(--mut); padding: 7px 13px; border-radius: 9px; font-weight: 800; text-align: left; transition: background .15s, color .15s; }
 .seg > button small { display: block; font-size: 10px; font-weight: 600; opacity: .8; }
@@ -484,8 +483,8 @@ textarea { width: 100%; height: min(320px, 42vh); resize: vertical; background: 
 .guide h3 { margin-top: 14px; }
 .guide h3:first-child { margin-top: 0; }
 
-.speed { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--mut); }
-.speed select { border: 1px solid var(--ln); background: var(--pn); border-radius: 8px; padding: 4px 8px; font-weight: 700; color: var(--ink); }
+.speed { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--mut); flex: none; }
+.speed select { border: 1px solid var(--ln); background: var(--pn); border-radius: 8px; padding: 4px 8px; font-weight: 700; color: var(--ink); flex: none; }
 .hintbox { width: min(100%, 420px); margin-top: 4px; padding: 8px 10px; border-radius: 10px; border: 1px solid color-mix(in srgb, var(--gl) 45%, var(--ln)); background: color-mix(in srgb, var(--gl) 10%, var(--pn)); text-align: left; }
 .hintbox p { margin: 2px 0 0; font-size: 13px; color: var(--ink); }
 .hinthead { font-size: 11px; color: var(--mut); }
@@ -515,6 +514,27 @@ table.les th, table.les td { border: 1px solid var(--ln); padding: 6px 8px; text
 }
 @media (max-width: 520px) {
   .wg { grid-template-columns: 1fr; }
+}
+@media (max-width: 860px) {
+  .gh { flex: 1 1 100%; justify-content: space-between; }
+  .dots { max-width: 100%; }
+}
+@media (max-height: 720px) {
+  body:not(.home) header { padding-top: 4px; padding-bottom: 4px; }
+  .top { padding: 4px 12px 0; }
+  #mission { padding: 6px 10px; }
+  #mission h2 { font-size: 16px; }
+  #mission p { font-size: 12px; line-height: 1.35; }
+  .doel { padding: 6px 8px; }
+  main { padding: 4px 10px 6px; }
+  main .card { padding: 8px 10px; }
+  .ch { margin-bottom: 4px; }
+  .boardwrap { gap: 4px; }
+  .modal { padding: 8px; }
+  .mc { max-height: calc(100dvh - 16px); }
+  .film-stage { min-height: 72px; padding: 8px; }
+  .film-gate .tour-nova { max-width: 120px; }
+  .film-main h3 { margin: 6px 0; font-size: 18px; }
 }
 
 .hero-actions { margin-top: 12px; }
