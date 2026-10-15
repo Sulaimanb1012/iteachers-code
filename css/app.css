@@ -426,6 +426,10 @@ main .card { min-height: 0; padding: 12px 14px; display: flex; flex-direction: c
 .ic.run, .blk.run { outline: 3px solid var(--gl); }
 .grp { display: inline-flex; flex-wrap: wrap; gap: 4px; align-items: center; padding: 4px; border-radius: 12px; border: 1px dashed var(--ac2); background: color-mix(in srgb, var(--ac2) 8%, transparent); }
 .grp.loop { border-color: var(--gl); }
+.grp.on { border-style: solid; background: color-mix(in srgb, var(--gl) 16%, transparent); }
+.grp .gt { display: inline-flex; align-items: center; gap: 4px; }
+.grp .nudge { border: 0; background: var(--pn); color: var(--ink); border-radius: 6px; width: 22px; height: 22px; padding: 0; font-weight: 800; }
+.selnote .btn { margin-left: 6px; padding: 4px 8px; font-size: 12px; }
 .grp.cond { border-color: #e11d48; }
 .grp.fn { border-color: #64748b; }
 .gt { font-size: 11px; font-weight: 800; padding: 0 4px; color: var(--ink); }

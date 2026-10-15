@@ -346,9 +346,14 @@ let mode = 1, lang = "js", teach = demo, menu = false, cat = "move";
   function visualNodes(nodes, prefix) {
     return nodes.map((n, i) => {
       const path = prefix ? prefix + "/" + i : String(i);
-      if (n.op === "REP" || n.op === "WHILE" || n.op === "IF" || n.op === "DEF") {
-        const kind = n.op === "REP" ? "loop" : n.op === "DEF" ? "fn" : "cond";
-        const title = n.op === "REP" ? "↻ " + n.n : n.op === "WHILE" ? "zolang" : n.op === "DEF" ? n.name : "als " + n.cond;
+      if (n.op === "REP") {
+        const on = sel === path + "/body" ? " on" : "";
+        const inner = visualNodes(n.body || [], path + "/body") || '<span class="hint">tik een icoon</span>';
+        return '<span class="grp loop' + on + '" data-socket="' + path + '/body" data-hid="' + n.hid + '"><span class="gt"><button type="button" class="nudge" data-bump="' + path + '" data-dir="-1" aria-label="Minder vaak">−</button>↻ <b>' + n.n + '</b><button type="button" class="nudge" data-bump="' + path + '" data-dir="1" aria-label="Vaker">+</button></span>' + inner + '<button type="button" class="gx" data-del="' + path + '" aria-label="Verwijder">×</button></span>';
+      }
+      if (n.op === "WHILE" || n.op === "IF" || n.op === "DEF") {
+        const kind = n.op === "DEF" ? "fn" : "cond";
+        const title = n.op === "WHILE" ? "zolang" : n.op === "DEF" ? n.name : "als " + n.cond;
         const inner = n.op === "IF"
           ? visualNodes(n.then, path + "/then") + '<span class="gt">anders</span>' + visualNodes(n.else || [], path + "/else")
           : visualNodes(n.body || [], path + "/body");
@@ -414,7 +419,10 @@ let mode = 1, lang = "js", teach = demo, menu = false, cat = "move";
     if (L.logic.length && mode === 2) tabs.push(["logic", "Logica"]);
     if (!tabs.some(t => t[0] === cat)) cat = tabs[0][0];
     let pal = "";
-    if (mode === 1) pal = L.ops.map(op => '<button type="button" class="pb big" draggable="true" data-add="' + op + '">' + icon(op) + "<span>" + LABEL[op] + "</span></button>").join("");
+    if (mode === 1) {
+      pal = L.ops.map(op => '<button type="button" class="pb big" draggable="true" data-add="' + op + '">' + icon(op) + "<span>" + LABEL[op] + "</span></button>").join("");
+      if (L.logic.includes("rep")) pal += '<button type="button" class="pb big" draggable="true" data-add="REP">' + icon("REP") + "<span>herhaal</span></button>";
+    }
     else if (cat === "logic") {
       if (L.logic.includes("rep")) pal += '<button type="button" class="pb" draggable="true" data-add="REP">↻ herhaal</button>';
       if (L.logic.includes("if")) pal += '<button type="button" class="pb" draggable="true" data-add="IF">◇ als</button>';
@@ -425,8 +433,10 @@ let mode = 1, lang = "js", teach = demo, menu = false, cat = "move";
       pal = ops.map(op => '<button type="button" class="pb" draggable="true" data-add="' + op + '">' + icon(op) + " " + LABEL[op] + "</button>").join("");
     }
     const tabHtml = mode === 2 && tabs.length > 1 ? '<div class="tabs">' + tabs.map(t => '<button type="button" data-cat="' + t[0] + '" class="' + (cat === t[0] ? "on" : "") + '">' + t[1] + "</button>").join("") + "</div>" : "";
+    const inLoop = mode === 1 && /\/body$/.test(sel);
     const program = mode === 1
-      ? '<div class="strip">' + (visualNodes(list(), "") || '<span class="hint">Tik een icoon om te beginnen.</span>') + "</div>"
+      ? '<div class="strip" data-socket="">' + (visualNodes(list(), "") || '<span class="hint">Tik een icoon om te beginnen.</span>') + "</div>"
+        + (inLoop ? '<p class="selnote">Volgende iconen komen in de herhaling. <button type="button" class="btn" data-unsel="1">Daarna verder</button></p>' : "")
       : '<div class="stack"><div class="blk start">▶ Start</div>' + socket(list(), "", "voeg een blok toe") + "</div>"
         + '<p class="selnote">Nieuwe blokken komen in <b>' + esc(selLabel()) + "</b>. Klik een vak om dat te wijzigen.</p>";
     let html = '<div class="tag">Niveau ' + mode + " · " + (mode === 1 ? "Visueel" : "Blokken") + "</div><h2>" + (mode === 1 ? "Tik de iconen" : "Bouw je programma") + "</h2>"
@@ -462,12 +472,19 @@ let mode = 1, lang = "js", teach = demo, menu = false, cat = "move";
     }
     const add = ev.target.closest("[data-add]");
     if (add) { addKind(add.dataset.add); return; }
+    if (ev.target.closest("[data-unsel]")) { sel = ""; editor(); return; }
     const tab = ev.target.closest("[data-cat]");
     if (tab) { cat = tab.dataset.cat; editor(); return; }
     const sock = ev.target.closest("[data-socket]");
     if (sock && !ev.target.closest("button, select, input")) { sel = sock.dataset.socket; editor(); }
   }
   function addKind(kind) {
+    if (mode === 1 && kind === "REP") {
+      const arr = list();
+      insertAt(arr, arr.length, "REP");
+      sel = (arr.length - 1) + "/body";
+      save(); editor(); return;
+    }
     const arr = resolveSocket(sel) || list();
     if (!resolveSocket(sel)) sel = "";
     insertAt(arr, arr.length, kind);
@@ -528,7 +545,10 @@ let mode = 1, lang = "js", teach = demo, menu = false, cat = "move";
       const b = row.getBoundingClientRect();
       if (idx === rows.length && ev.clientY < b.top + b.height / 2) idx = r;
     });
-    if (drag.add) insertAt(dest, idx, drag.add);
+    if (drag.add) {
+      insertAt(dest, idx, drag.add);
+      if (mode === 1 && drag.add === "REP") sel = (socketPath ? socketPath + "/" : "") + idx + "/body";
+    }
     else if (drag.path && socketPath !== drag.path && !socketPath.startsWith(drag.path + "/")) {
       const loc = locate(drag.path);
       const node = loc.arr.splice(loc.index, 1)[0];
