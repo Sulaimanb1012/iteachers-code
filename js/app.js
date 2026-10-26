@@ -232,8 +232,9 @@ let mode = 1, lang = "js", teach = demo, menu = false, cat = "move";
     const rowGap = parseFloat(styles.rowGap || styles.gap) || 0;
     const reserved = extras.reduce((n, el) => n + el.offsetHeight, 0) + rowGap * extras.length;
     const availH = wrap.clientHeight - reserved;
+    const slack = 6;
     const cell = Math.max(12, Math.min(64, Math.floor(Math.min(
-      (wrap.clientWidth - pad * 2 - gap * (W - 1)) / W,
+      (wrap.clientWidth - slack - pad * 2 - gap * (W - 1)) / W,
       (Math.max(availH, 64) - pad * 2 - gap * (H - 1)) / H
     ))));
     b.style.width = (pad * 2 + cell * W + gap * (W - 1)) + "px";
